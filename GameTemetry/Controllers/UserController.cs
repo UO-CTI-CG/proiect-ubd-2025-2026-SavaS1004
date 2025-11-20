@@ -55,10 +55,12 @@ namespace GameTemetry.Controllers
         [HttpPost]
         public async Task<ActionResult<UserResponseDto>> CreateUser(CreateUserDto createDto)
         {
+            string passwordHash = BCrypt.Net.BCrypt.HashPassword(createDto.Password);
             var user = new User
             {
                 Username = createDto.Username,
                 Email = createDto.Email,
+                PasswordHash=passwordHash,
                 CreatedAt = System.DateTime.UtcNow
             };
 
