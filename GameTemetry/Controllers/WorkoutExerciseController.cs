@@ -34,6 +34,10 @@ namespace GameTemetry.Controllers
         [HttpPost]
         public async Task<ActionResult<WorkoutExerciseResponseDto>> Create(CreateWorkoutExerciseDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var e = await _context.Exercises.FindAsync(dto.ExerciseId);
             if (e == null) return BadRequest("Invalid ExerciseId!");
 

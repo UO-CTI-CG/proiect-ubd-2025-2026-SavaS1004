@@ -56,6 +56,10 @@ namespace GameTemetry.Controllers
         public async Task<ActionResult<UserResponseDto>> CreateUser(CreateUserDto createDto)
         {
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(createDto.Password);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var user = new User
             {
                 Username = createDto.Username,
@@ -90,6 +94,10 @@ namespace GameTemetry.Controllers
 
             _context.Entry(user).State = EntityState.Modified;
 
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             try
             {
                 await _context.SaveChangesAsync();

@@ -46,6 +46,10 @@ namespace GameTemetry.Controllers
         [HttpPost]
         public async Task<ActionResult<ExerciseResponseDto>> CreateExercise(CreateExerciseDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var e = new Exercise
             {
                 Name = dto.Name,
@@ -69,6 +73,10 @@ namespace GameTemetry.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExercise(int id, CreateExerciseDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var e = await _context.Exercises.FindAsync(id);
             if (e == null) return NotFound();
             e.Name = dto.Name;

@@ -21,6 +21,10 @@ namespace GameTemetry.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(CreateUserDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             // Prevent duplicate email
             if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
                 return BadRequest("Email already registered.");
@@ -50,6 +54,10 @@ namespace GameTemetry.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
             if (user == null)
                 return Unauthorized("Invalid email or password.");

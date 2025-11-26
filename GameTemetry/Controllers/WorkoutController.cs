@@ -1,8 +1,10 @@
-﻿using GameTemetry.Data;
+﻿using CsvHelper;
+using GameTemetry.Data;
 using GameTemetry.DTOs;
 using GameTemetry.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace GameTemetry.Controllers
 {
@@ -41,6 +43,10 @@ namespace GameTemetry.Controllers
         [HttpPost]
         public async Task<ActionResult<WorkoutResponseDto>> CreateWorkout(CreateWorkoutDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             if (!await _context.Users.AnyAsync(u => u.Id == dto.UserId))
                 return BadRequest("Invalid UserId.");
 
@@ -96,6 +102,79 @@ namespace GameTemetry.Controllers
             _context.Workouts.Remove(workout);
             await _context.SaveChangesAsync();
             return NoContent();
-        }        
+        }
+        //CSV import/Export
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportWorkouts()
+        {
+            var workouts = await _context.Workouts
+                .Include(w => w.WorkoutExercises)
+                .ThenInclude(we => we.Exercise)
+                .ToListAsync();
+
+            using var memoryStream = new MemoryStream();
+            using var streamWriter = new StreamWriter(memoryStream);
+            using var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture);
+
+            // Write header and records using a flattened DTO for CSV
+            var exportDtos = workouts.Select(w => new
+            {
+                w.Id,
+                w.UserId,
+                w.WorkoutDate,
+                w.DurationMinutes,
+                w.Notes
+                // Add more fields as needed
+            });
+
+            await csvWriter.WriteRecordsAsync(exportDtos);
+
+            await streamWriter.FlushAsync();
+            memoryStream.Position = 0;
+
+            return File(memoryStream, "text/csv", "workouts.csv");
+        }
+
+        [HttpPost("import")]
+        public async Task<IActionResult> ImportWorkouts(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("CSV file is required.");
+
+            using var stream = file.OpenReadStream();
+            using var streamReader = new StreamReader(stream);
+            using var csvReader = new CsvReader(streamReader, CultureInfo.InvariantCulture);
+
+            var records = csvReader.GetRecords<CreateWorkoutDto>().ToList();
+
+            // Validate UserIds exist:
+            var userIds = records.Select(r => r.UserId).Distinct();
+            var existingUserIds = await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            foreach (var record in records)
+            {
+                if (!existingUserIds.Contains(record.UserId))
+                    return BadRequest($"UserId {record.UserId} does not exist.");
+            }
+
+            foreach (var dto in records)
+            {
+                var workout = new Workout
+                {
+                    UserId = dto.UserId,
+                    WorkoutDate = dto.WorkoutDate,
+                    DurationMinutes = dto.DurationMinutes,
+                    Notes = dto.Notes
+                    // Add more mappings as needed
+                };
+                _context.Workouts.Add(workout);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok($"{records.Count} workouts imported successfully.");
+        }
     }
 }
