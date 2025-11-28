@@ -1,6 +1,7 @@
 ﻿using CsvHelper;
 using GameTemetry.Data;
 using GameTemetry.DTOs;
+using GameTemetry.Interfaces;
 using GameTemetry.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -175,6 +176,86 @@ namespace GameTemetry.Controllers
 
             await _context.SaveChangesAsync();
             return Ok($"{records.Count} workouts imported successfully.");
+        }
+        //Import/Export
+        [HttpGet("export-json-workouts")]
+        public async Task<IActionResult> ExportWorkoutsJson()
+        {
+            var workouts = await _context.Workouts
+                .Include(w => w.WorkoutExercises)
+                .ThenInclude(we => we.Exercise)
+                .ToListAsync();
+
+            var fileService = HttpContext.RequestServices.GetRequiredService<IFileImportExportService>();
+            var jsonBytes = await fileService.ExportWorkoutsToJsonAsync(workouts);
+
+            return File(jsonBytes, "application/json", $"workouts-{DateTime.UtcNow:yyyyMMdd}.json");
+        }
+        [HttpGet("export-json-workout/{id}")]
+        public async Task<IActionResult> ExportWorkoutJson(int id)
+        {
+            var workout = await _context.Workouts
+        .Include(w => w.WorkoutExercises)
+        .ThenInclude(we => we.Exercise)
+        .FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workout == null)
+                return NotFound("Workout not found.");
+
+            var fileService = HttpContext.RequestServices.GetRequiredService<IFileImportExportService>();
+
+            // Pass single workout (service handles List<Workout>)
+            var jsonBytes = await fileService.ExportWorkoutsToJsonAsync(new List<Workout> { workout });
+
+            return File(jsonBytes, "application/json", $"workout-{id}-{DateTime.UtcNow:yyyyMMdd}.json");
+        }
+
+        [HttpPost("import-json")]
+        public async Task<IActionResult> ImportWorkoutsJson(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("JSON file is required.");
+
+            using var stream = file.OpenReadStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var jsonBytes = ms.ToArray();
+
+            var fileService = HttpContext.RequestServices.GetRequiredService<IFileImportExportService>();
+            var importDtos = await fileService.ImportWorkoutsFromJsonAsync(jsonBytes);
+
+            foreach (var dto in importDtos)
+            {
+                var workout = new Workout
+                {
+                    UserId = dto.UserId,
+                    WorkoutDate = dto.WorkoutDate,
+                    DurationMinutes = dto.DurationMinutes,
+                    Notes = dto.Notes
+                };
+                _context.Workouts.Add(workout);
+                await _context.SaveChangesAsync(); // Save to get WorkoutId
+
+                foreach (var exDto in dto.Exercises)
+                {
+                    var workoutExercise = new WorkoutExercise
+                    {
+                        WorkoutId = workout.Id,
+                        ExerciseId = exDto.ExerciseId,
+                        Reps = exDto.Reps,
+                        Sets = exDto.Sets,
+                        Weight = exDto.Weight,
+                        RIR = exDto.RIR,
+                        RPE = exDto.RPE,
+                        DurationSeconds = exDto.DurationSeconds,
+                        Notes = exDto.Notes
+                    };
+                    _context.WorkoutExercises.Add(workoutExercise);
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok($"{importDtos.Count} workouts imported successfully.");
         }
     }
 }
