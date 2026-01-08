@@ -9,7 +9,7 @@
         public int ExerciseId { get; set; }
 
         // Metrics
-        public decimal TotalVolume { get; set; } // Total tonaj (reps * sets * weight)
+        public decimal TotalVolume { get; set; } // Total  (reps * sets * weight)
         public decimal AverageReps { get; set; }
         public decimal AverageRIR { get; set; }
         public decimal MaxWeight { get; set; }

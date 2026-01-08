@@ -1,0 +1,7 @@
+{
+  "name": "GameTelemetry-App",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

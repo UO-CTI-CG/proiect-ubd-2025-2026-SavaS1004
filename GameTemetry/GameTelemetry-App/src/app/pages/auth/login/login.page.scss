@@ -1,0 +1,82 @@
+ion-content {
+  --background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+// Make typed text visible
+ion-input {
+  --color: #111; // text you type
+  --placeholder-color: #666; // placeholder text
+  --placeholder-opacity: 1;
+}
+
+// Make the floating label visible too (Email/Password label)
+ion-label {
+  color: #444 !important;
+}
+
+// Ensure ion-item itself doesn't force a weird color
+ion-item.form-item {
+  --background: rgba(255, 255, 255, 0.95);
+  --color: #111; // affects some item text
+}
+
+.auth-container {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.auth-header {
+  text-align: center;
+  margin-top: 24px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .tagline {
+    margin-top: 8px;
+    color: #666;
+  }
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-item {
+  --background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+}
+
+.error-message {
+  margin: -8px 16px 0 16px;
+}
+
+.primary-btn {
+  --background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  --border-radius: 10px;
+  height: 48px;
+
+  .spinner {
+    margin-right: 8px;
+  }
+}
+
+.secondary-btn {
+  --border-radius: 10px;
+  --border-color: #667eea;
+  --color: #667eea;
+  height: 48px;
+}
+
+.divider {
+  margin: 18px 0;
+  text-align: center;
+  color: #999;
+}

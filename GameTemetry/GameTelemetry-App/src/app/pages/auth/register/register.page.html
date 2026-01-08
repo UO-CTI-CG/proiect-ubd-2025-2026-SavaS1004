@@ -1,0 +1,100 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Register</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>Create account</h1>
+      <p class="tagline">Start tracking workouts</p>
+    </div>
+
+    <form (ngSubmit)="onRegister()" #form="ngForm" class="auth-form">
+
+      <!-- Email -->
+      <ion-item class="form-item">
+        <ion-label position="floating">Email</ion-label>
+        <ion-input type="email" name="email" required pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" [(ngModel)]="email"
+          #emailModel="ngModel">
+        </ion-input>
+      </ion-item>
+
+      <div class="error-message"
+        *ngIf="(emailModel.invalid && (emailModel.touched || emailModel.dirty)) || form.submitted">
+        <ion-text color="danger">
+          <small *ngIf="emailModel.errors?.['required']">Email is required.</small>
+          <small *ngIf="emailModel.errors?.['pattern']">Email format is invalid.</small>
+        </ion-text>
+      </div>
+
+      <!-- Username -->
+      <ion-item class="form-item">
+        <ion-label position="floating">Username</ion-label>
+        <ion-input type="text" name="username" required minlength="3" maxlength="20" [(ngModel)]="username"
+          #usernameModel="ngModel">
+        </ion-input>
+      </ion-item>
+
+      <div class="error-message"
+        *ngIf="(usernameModel.invalid && (usernameModel.touched || usernameModel.dirty)) || form.submitted">
+        <ion-text color="danger">
+          <small *ngIf="usernameModel.errors?.['required']">Username is required.</small>
+          <small *ngIf="usernameModel.errors?.['minlength']">Username must be at least 3 characters.</small>
+          <small *ngIf="usernameModel.errors?.['maxlength']">Username must be at most 20 characters.</small>
+        </ion-text>
+      </div>
+
+      <!-- Password -->
+      <ion-item class="form-item">
+        <ion-label position="floating">Password</ion-label>
+        <ion-input [type]="showPassword ? 'text' : 'password'" name="password" required minlength="6"
+          [(ngModel)]="password" #passwordModel="ngModel">
+        </ion-input>
+
+        <ion-button fill="clear" slot="end" type="button" (click)="togglePasswordVisibility()">
+          <ion-icon [name]="showPassword ? 'eye-off' : 'eye'"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <div class="error-message"
+        *ngIf="(passwordModel.invalid && (passwordModel.touched || passwordModel.dirty)) || form.submitted">
+        <ion-text color="danger">
+          <small *ngIf="passwordModel.errors?.['required']">Password is required.</small>
+          <small *ngIf="passwordModel.errors?.['minlength']">Password must be at least 6 characters.</small>
+        </ion-text>
+      </div>
+
+      <!-- Confirm Password (custom message, since Angular validators can’t compare easily in template-driven) -->
+      <ion-item class="form-item">
+        <ion-label position="floating">Confirm password</ion-label>
+        <ion-input [type]="showPassword ? 'text' : 'password'" name="confirmPassword" required
+          [(ngModel)]="confirmPassword" #confirmModel="ngModel">
+        </ion-input>
+      </ion-item>
+
+      <div class="error-message"
+        *ngIf="((confirmModel.touched || confirmModel.dirty || form.submitted) && !confirmPasswordOk)">
+        <ion-text color="danger">
+          <small *ngIf="!confirmPassword">Confirm password is required.</small>
+          <small *ngIf="confirmPassword && confirmPassword !== password">Passwords do not match.</small>
+        </ion-text>
+      </div>
+
+      <ion-button expand="block" type="submit" [disabled]="isLoading" class="primary-btn">
+        <ion-spinner *ngIf="isLoading" name="crescent" class="spinner"></ion-spinner>
+        <span *ngIf="!isLoading">Create account</span>
+      </ion-button>
+
+    </form>
+
+    <div class="divider">
+      <span>Already have an account?</span>
+    </div>
+
+    <ion-button expand="block" fill="outline" (click)="goToLogin()" class="secondary-btn">
+      Back to login
+    </ion-button>
+  </div>
+</ion-content>
