@@ -1,0 +1,92 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Home</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="logout()">
+        <ion-icon name="log-out-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <!-- Quick Stats -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Dashboard</ion-card-title>
+      <ion-card-subtitle>Last workout: {{ stats.lastWorkoutDateLabel }}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="4">
+            <div class="stat">
+              <div class="stat__value">{{ stats.totalWorkouts }}</div>
+              <div class="stat__label">Total</div>
+            </div>
+          </ion-col>
+
+          <ion-col size="4">
+            <div class="stat">
+              <div class="stat__value">{{ stats.last7DaysWorkouts }}</div>
+              <div class="stat__label">Last 7 days</div>
+            </div>
+          </ion-col>
+
+          <ion-col size="4">
+            <div class="stat">
+              <div class="stat__value">{{ stats.avgDurationMinutes }}</div>
+              <div class="stat__label">Avg min</div>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
+      <ion-button expand="block" (click)="createWorkout()">
+        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+        New workout
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Recent Workouts -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Recent workouts</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-list *ngIf="recentWorkouts.length > 0; else emptyState">
+        <ion-item button detail="true" *ngFor="let w of recentWorkouts; trackBy: trackByWorkoutId"
+          (click)="openWorkout(w)">
+          <ion-label>
+            <h2>{{ w.workoutDate | date:'medium' }}</h2>
+            <p>{{ w.durationMinutes }} min • {{ w.notes || 'No notes' }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <ng-template #emptyState>
+        <ion-text color="medium">
+          <p class="empty">No workouts yet. Create your first one.</p>
+        </ion-text>
+      </ng-template>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Next steps</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" routerLink="/exercises" fill="outline">
+        Browse exercises
+      </ion-button>
+      <ion-button expand="block" routerLink="/analytics" fill="outline">
+        View analytics
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

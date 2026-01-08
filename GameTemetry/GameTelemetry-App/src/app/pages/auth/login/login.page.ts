@@ -64,7 +64,9 @@ export class LoginPage implements OnInit, OnDestroy {
       next: async (res) => {
         await loading.dismiss();
         await this.toast(`Welcome back, ${res.username}!`, 'success');
-        this.router.navigate(['/home']);
+        const ok = await this.router.navigateByUrl('/home', {
+          replaceUrl: true,
+        });
       },
       error: async (e: Error) => {
         await loading.dismiss();

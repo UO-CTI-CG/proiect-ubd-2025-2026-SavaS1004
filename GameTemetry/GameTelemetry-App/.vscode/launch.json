@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "chrome",
+            "name": "http://withDebugTracing ",
+            "request": "launch",
+            "url": "http://withDebugTracing "
+        }
+    ]
+}

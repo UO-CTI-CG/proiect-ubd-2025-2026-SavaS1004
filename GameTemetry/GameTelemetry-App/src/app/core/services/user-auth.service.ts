@@ -22,14 +22,16 @@ export class UserAuthService {
   }
 
   private restoreSession(): void {
-    const raw = localStorage.getItem('currentUser');
+    const raw = sessionStorage.getItem('currentUser');
     if (!raw) return;
 
     try {
       const user = JSON.parse(raw) as User;
       this.currentUserSubject.next(user);
+      sessionStorage.setItem('userId', String(user.id));
     } catch {
-      localStorage.removeItem('currentUser');
+      sessionStorage.removeItem('currentUser');
+      sessionStorage.removeItem('userId');
     }
   }
 
@@ -72,7 +74,8 @@ export class UserAuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('userId');
     this.currentUserSubject.next(null);
   }
 
@@ -88,7 +91,8 @@ export class UserAuthService {
       createdAt: res.createdAt,
     };
 
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    sessionStorage.setItem('userId', String(user.id));
+    sessionStorage.setItem('currentUser', JSON.stringify(user));
     this.currentUserSubject.next(user);
   }
 

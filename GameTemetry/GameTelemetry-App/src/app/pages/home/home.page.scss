@@ -1,0 +1,19 @@
+.stat {
+  text-align: center;
+}
+
+.stat__value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat__label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.empty {
+  margin: 0;
+  padding: 8px 0;
+}
