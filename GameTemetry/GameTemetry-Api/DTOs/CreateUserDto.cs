@@ -14,7 +14,6 @@ namespace GameTemetry.DTOs
         [Required]
         [StringLength(64,MinimumLength =6)]
         public string Password { get; set; } = null;
-        public DateTime CreatedAt { get; set; }
        
     }
 }

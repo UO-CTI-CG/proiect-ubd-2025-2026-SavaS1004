@@ -27,7 +27,7 @@ namespace GameTemetry.Controllers
             }
             // Prevent duplicate email
             if (await _context.Users.AnyAsync(x => x.Email == dto.Email))
-                return BadRequest("Email already registered.");
+                return BadRequest(new { message = "Invalid email or password." });
 
             var user = new User
             {
@@ -67,15 +67,14 @@ namespace GameTemetry.Controllers
             if (!valid)
                 return Unauthorized("Invalid email or password.");
 
-            // Optionally, generate a JWT token here...
-
             // Return minimal success response
             return Ok(new
             {
                 message = "Login successful.",
                 user.Id,
                 user.Username,
-                user.Email
+                user.Email,
+                user.CreatedAt
             });
         }
     }

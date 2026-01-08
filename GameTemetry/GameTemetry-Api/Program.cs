@@ -11,26 +11,26 @@ namespace GameTemetry
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1. Database
+            // 1. Database Connection (Matches your appsettings.json)
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // 2. Routing
+            // 2. Routing - Keep LowercaseUrls true (Matches your Angular service)
             builder.Services.AddRouting(options => options.LowercaseUrls = true);
-            builder.Services.AddControllers();
 
-            // 3. Swagger (Enable it!)
+            builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddScoped<IFileImportExportService, FileImportExportService>();
 
-            // 4. CORS (Fix: Allow Everything for Dev)
+            // 3. FIX: CORS Policy (Allow Everything for Debugging)
+            // This prevents "Network Error" / "blocked by CORS policy" in the browser
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowLocalhost", policy =>
+                options.AddPolicy("AllowAll", policy =>
                 {
                     policy
-                        .AllowAnyOrigin()  
+                        .AllowAnyOrigin()  // Allows Ionic (8100), Postman, etc.
                         .AllowAnyMethod()
                         .AllowAnyHeader();
                 });
@@ -38,17 +38,16 @@ namespace GameTemetry
 
             var app = builder.Build();
 
-            // 5. Apply CORS
-            app.UseCors("AllowLocalhost");
-
-            // 6. Enable Swagger UI
+            // 4. FIX: Enable Swagger so you don't get a 404 when the API starts
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // app.UseHttpsRedirection();
+            // 5. Apply the CORS policy
+            app.UseCors("AllowAll");
+
             app.UseAuthorization();
             app.MapControllers();
 
