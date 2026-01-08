@@ -1,4 +1,3 @@
-
 using GameTemetry.Data;
 using GameTemetry.Interfaces;
 using GameTemetry.Services;
@@ -10,42 +9,46 @@ namespace GameTemetry
     {
         public static void Main(string[] args)
         {
-            //angular ionic
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // 1. Database
             builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // 2. Routing
             builder.Services.AddRouting(options => options.LowercaseUrls = true);
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+            // 3. Swagger (Enable it!)
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddScoped<IFileImportExportService, FileImportExportService>();
-            // Add CORS policy for Ionic app
+
+            // 4. CORS (Fix: Allow Everything for Dev)
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost", policy =>
                 {
                     policy
-                        .WithOrigins("http://localhost:8100", "http://localhost:4200")
+                        .AllowAnyOrigin()  
                         .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials();
+                        .AllowAnyHeader();
                 });
             });
+
             var app = builder.Build();
 
+            // 5. Apply CORS
             app.UseCors("AllowLocalhost");
 
-            // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
-            //{
-            //    app.UseSwagger();
-            //    app.UseSwaggerUI();
-            //}
+            // 6. Enable Swagger UI
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
-            //app.UseHttpsRedirection();
+            // app.UseHttpsRedirection();
             app.UseAuthorization();
             app.MapControllers();
 
