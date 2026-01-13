@@ -38,7 +38,7 @@ namespace GameTemetry.Data
                 .HasOne(we => we.Exercise)
                 .WithMany(e => e.WorkoutExercises)
                 .HasForeignKey(we => we.ExerciseId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ============ User → PerformanceMetrics (1:Many) ============
             modelBuilder.Entity<PerformanceMetric>()

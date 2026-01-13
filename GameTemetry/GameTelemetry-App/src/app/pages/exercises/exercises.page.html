@@ -1,9 +1,16 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
-    </ion-buttons>
     <ion-title>Exercises</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="goToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button (click)="goToProfile()">
+        <ion-icon name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -14,29 +21,35 @@
     </ion-toolbar>
   </ion-header>
 
-  <div *ngIf="isLoading" class="ion-padding">
-    <ion-skeleton-text animated style="width: 100%; height: 50px; margin-bottom: 10px;"></ion-skeleton-text>
-    <ion-skeleton-text animated style="width: 100%; height: 50px;"></ion-skeleton-text>
+  <div class="ion-padding" *ngIf="isLoading && exercises.length === 0">
+    <p>Loading...</p>
   </div>
 
-  <ion-list *ngIf="!isLoading">
-    <ion-item-group *ngFor="let cat of categories">
-      <ion-item-divider sticky>
-        <ion-label>{{ cat }}</ion-label>
-      </ion-item-divider>
+  <ion-list *ngFor="let cat of categories">
+    <ion-list-header>
+      <ion-label>
+        <strong>{{ cat }}</strong>
+      </ion-label>
+    </ion-list-header>
 
-      <ion-item *ngFor="let ex of groupedExercises[cat]">
-        <ion-label>
-          <h2>{{ ex.name }}</h2>
-          <p class="ion-text-wrap">{{ ex.description }}</p>
-        </ion-label>
-      </ion-item>
-    </ion-item-group>
+    <ion-item *ngFor="let ex of groupedExercises[cat]">
+      <ion-label>
+        <h2>{{ ex.name }}</h2>
+      </ion-label>
+
+      <ion-button fill="clear" slot="end" (click)="openEditExerciseAlert(ex)">
+        <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button fill="clear" color="danger" slot="end" (click)="confirmDelete(ex.id)">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
   </ion-list>
 
-  <div *ngIf="!isLoading && exercises.length === 0" class="ion-padding ion-text-center">
-    <ion-text color="medium">
-      <p>No exercises found.</p>
-    </ion-text>
-  </div>
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openAddExerciseAlert()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

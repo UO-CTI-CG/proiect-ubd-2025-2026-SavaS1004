@@ -6,9 +6,10 @@ import {
   AlertController,
   ToastController,
   LoadingController,
+  ViewWillEnter,
 } from '@ionic/angular';
+import { homeOutline, personCircleOutline, trashOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
-import { trashOutline } from 'ionicons/icons';
 import { ApiService } from '../../../core/services/api.service';
 
 @Component({
@@ -34,7 +35,8 @@ import { ApiService } from '../../../core/services/api.service';
     `,
   ],
 })
-export class DetailPage implements OnInit {
+// 2. Implement the interface
+export class DetailPage implements OnInit, ViewWillEnter {
   workout: any = null;
   isLoading = true;
 
@@ -46,11 +48,16 @@ export class DetailPage implements OnInit {
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController
   ) {
-    // FIX 1: Register the icon so the button shows up
-    addIcons({ trashOutline });
+    addIcons({ trashOutline, homeOutline, personCircleOutline });
   }
 
   ngOnInit() {
+    // 3. Leave this empty or for one-time setup only.
+    // Fetching here won't re-trigger when coming back from Edit.
+  }
+
+  // 4. Move fetch logic here. This runs every time the view becomes active.
+  ionViewWillEnter() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadWorkout(id);
@@ -60,19 +67,24 @@ export class DetailPage implements OnInit {
   }
 
   async loadWorkout(id: string) {
-    const loading = await this.loadingCtrl.create({ message: 'Loading...' });
-    await loading.present();
+    // Optional: Only show loading spinner if we don't have data yet
+    // to prevent flickering when just refreshing updated data
+    let loading: HTMLIonLoadingElement | null = null;
 
-    // FIX 2: Changed 'workout' to 'workouts' (plural) to match backend
+    if (!this.workout) {
+      loading = await this.loadingCtrl.create({ message: 'Loading...' });
+      await loading.present();
+    }
+
     this.api.get<any>(`workout/${id}`).subscribe({
       next: (data) => {
         this.workout = data;
         this.isLoading = false;
-        loading.dismiss();
+        if (loading) loading.dismiss();
       },
       error: async () => {
         this.isLoading = false;
-        loading.dismiss();
+        if (loading) loading.dismiss();
         const toast = await this.toastCtrl.create({
           message: 'Workout not found',
           duration: 2000,
@@ -103,7 +115,6 @@ export class DetailPage implements OnInit {
   deleteWorkout() {
     if (!this.workout) return;
 
-    // FIX 3: Changed 'workout' to 'workouts' (plural)
     this.api.delete(`workout/${this.workout.id}`).subscribe({
       next: async () => {
         const toast = await this.toastCtrl.create({
@@ -118,5 +129,12 @@ export class DetailPage implements OnInit {
         // Handle error (e.g. show toast)
       },
     });
+  }
+  goToHome() {
+    this.router.navigate(['/home']);
+  }
+
+  goToProfile() {
+    this.router.navigate(['/profile']);
   }
 }

@@ -43,7 +43,7 @@ namespace GameTemetry.Controllers
 
             var we = new WorkoutExercise
             {
-                WorkoutId = dto.WorkoutId, // Adaugă WorkoutId în CreateWorkoutExerciseDto dacă nu ai!
+                WorkoutId = dto.WorkoutId,
                 ExerciseId = dto.ExerciseId,
                 Reps = dto.Reps,
                 Sets = dto.Sets,

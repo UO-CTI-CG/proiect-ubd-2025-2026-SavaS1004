@@ -6,8 +6,13 @@ import {
   LoadingController,
   ToastController,
 } from '@ionic/angular';
-
 import { ApiService } from '../../core/services/api.service';
+import {
+  logOutOutline,
+  homeOutline,
+  personCircleOutline,
+} from 'ionicons/icons';
+import { addIcons } from 'ionicons';
 
 export interface Workout {
   id: number;
@@ -49,7 +54,9 @@ export class HomePage implements OnInit {
     private router: Router,
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController
-  ) {}
+  ) {
+    addIcons({ logOutOutline });
+  }
 
   ngOnInit(): void {
     this.userId = this.getUserIdFromStorage();
@@ -153,7 +160,8 @@ export class HomePage implements OnInit {
   }
 
   async logout(): Promise<void> {
-    sessionStorage.removeItem('userId');
+    sessionStorage.clear();
+    localStorage.clear();
     await this.toast('Logged out.', 'medium');
     this.router.navigateByUrl('/login', { replaceUrl: true });
   }

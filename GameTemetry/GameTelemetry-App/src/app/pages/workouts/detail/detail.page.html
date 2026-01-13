@@ -3,10 +3,24 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
+
     <ion-title>Workout Details</ion-title>
+
     <ion-buttons slot="end">
+      <ion-button [routerLink]="['/workouts/edit', workout?.id]" [disabled]="isLoading">
+        Edit
+      </ion-button>
+
       <ion-button color="danger" (click)="confirmDelete()" [disabled]="isLoading">
         <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+
+      <ion-button (click)="goToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+      </ion-button>
+
+      <ion-button (click)="goToProfile()">
+        <ion-icon name="person-circle-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

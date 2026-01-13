@@ -16,26 +16,27 @@ export const routes: Routes = [
   },
   {
     path: 'register',
-    //canActivate: [guestGuard],
     loadComponent: () =>
       import('./pages/auth/register/register.page').then((m) => m.RegisterPage),
   },
   {
     path: 'home',
-    //canActivate: [authGuard],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/home/home.page').then((m) => m.HomePage),
   },
   {
     path: 'exercises',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/exercises/exercises.page').then((m) => m.ExercisesPage),
   },
-  {
-    path: 'workouts',
-    loadComponent: () =>
-      import('./pages/workouts/list/list.page').then((m) => m.ListPage),
-  },
+  //IDK what this is really for
+  // {
+  //   path: 'workouts',
+  //   loadComponent: () =>
+  //     import('./pages/workouts/list/list.page').then((m) => m.ListPage),
+  // },
   {
     path: 'workouts/create',
     canActivate: [authGuard],
@@ -43,6 +44,12 @@ export const routes: Routes = [
       import('./pages/workouts/create/create.page').then(
         (m) => m.CreateWorkoutPage
       ),
+  },
+  {
+    path: 'workouts/edit/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/workouts/edit/edit.page').then((m) => m.EditWorkoutPage),
   },
   {
     path: 'workouts/:id',

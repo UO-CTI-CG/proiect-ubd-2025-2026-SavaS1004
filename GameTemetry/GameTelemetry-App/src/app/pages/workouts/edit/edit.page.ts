@@ -2,11 +2,16 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController, NavController } from '@ionic/angular';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
-import { Router } from '@angular/router';
-import { homeOutline, personCircleOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
-// Interfaces matching your Backend DTOs
+import {
+  homeOutline,
+  personCircleOutline,
+  trashOutline,
+  saveOutline,
+} from 'ionicons/icons';
+
 interface ExerciseOption {
   id: number;
   name: string;
@@ -33,13 +38,15 @@ interface CreateWorkoutDto {
 }
 
 @Component({
-  selector: 'app-workout-create',
+  selector: 'app-workout-edit',
   standalone: true,
   imports: [CommonModule, IonicModule, FormsModule],
-  templateUrl: './create.page.html',
-  styleUrls: ['./create.page.scss'],
+  templateUrl: './edit.page.html',
+  styleUrls: ['./edit.page.scss'],
 })
-export class CreateWorkoutPage implements OnInit {
+export class EditWorkoutPage implements OnInit {
+  workoutId: number | null = null;
+
   // Form Data
   workoutDate: string = new Date().toISOString();
   durationMinutes: number = 60;
@@ -55,20 +62,64 @@ export class CreateWorkoutPage implements OnInit {
   constructor(
     private api: ApiService,
     private toastCtrl: ToastController,
-    private router: Router,
-    private navCtrl: NavController
+    private route: ActivatedRoute,
+    private navCtrl: NavController,
+    private router: Router
   ) {
-    addIcons({ homeOutline, personCircleOutline });
+    addIcons({ trashOutline, saveOutline, homeOutline, personCircleOutline });
   }
 
   ngOnInit() {
     this.loadExercises();
+
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.workoutId = +id;
+      this.loadWorkoutDetails(id);
+    } else {
+      this.showToast('Invalid workout ID', 'danger');
+      this.navCtrl.navigateBack('/workouts');
+    }
   }
 
   loadExercises() {
     this.api.get<ExerciseOption[]>('exercise').subscribe({
       next: (data) => (this.availableExercises = data),
       error: () => this.showToast('Failed to load exercises list', 'danger'),
+    });
+  }
+
+  loadWorkoutDetails(id: string) {
+    // 1. FIX: Ensure we hit the singular endpoint if that is your backend structure
+    this.api.get<any>(`workout/${id}`).subscribe({
+      next: (data) => {
+        // Handle if response is wrapped in { workout: ... } or flat
+        const workout = data.workout || data;
+
+        this.workoutDate = workout.workoutDate;
+        this.durationMinutes = workout.durationMinutes;
+        this.notes = workout.notes;
+
+        // 2. FIX: Handle Singular vs Plural backend naming
+        // If backend returns 'exercise' (singular list) or 'exercises'
+        const rawExercises = workout.exercise || workout.exercises || [];
+
+        this.addedExercises = rawExercises.map((ex: any) => ({
+          exerciseId: ex.exerciseId,
+          reps: ex.reps,
+          sets: ex.sets,
+          weight: ex.weight,
+          rir: ex.rir,
+          rpe: ex.rpe,
+          durationSeconds: ex.durationSeconds,
+          notes: ex.notes,
+          orderInWorkout: ex.orderInWorkout,
+        }));
+      },
+      error: () => {
+        this.showToast('Failed to load workout details.', 'danger');
+        this.navCtrl.navigateBack('/workouts');
+      },
     });
   }
 
@@ -85,13 +136,10 @@ export class CreateWorkoutPage implements OnInit {
       durationSeconds: 0,
       notes: '',
       orderInWorkout: this.addedExercises.length + 1,
-      // Helper for UI display (not sent to backend, but useful)
-      // We'll map it strictly before sending if needed,
-      // but extra props usually ignored by JSON serializers
     };
 
     this.addedExercises.push(newEntry);
-    this.selectedExerciseId = null; // Reset selection
+    this.selectedExerciseId = null;
   }
 
   removeExercise(index: number) {
@@ -100,21 +148,18 @@ export class CreateWorkoutPage implements OnInit {
 
   getExerciseName(id: number): string {
     return (
-      this.availableExercises.find((e) => e.id === id)?.name ||
-      'Unknown Exercise'
+      this.availableExercises.find((e) => e.id === id)?.name || 'Loading...'
     );
   }
 
-  async saveWorkout() {
+  // --- UPDATED FUNCTION ---
+  async updateWorkout() {
+    if (!this.workoutId) return;
+
     const userId = Number(sessionStorage.getItem('userId'));
 
-    if (!userId) {
-      this.showToast('User session invalid. Please login again.', 'danger');
-      return;
-    }
-
     if (this.addedExercises.length === 0) {
-      this.showToast('Please add at least one exercise.', 'warning');
+      this.showToast('Please keep at least one exercise.', 'warning');
       return;
     }
 
@@ -126,20 +171,19 @@ export class CreateWorkoutPage implements OnInit {
       exercises: this.addedExercises.map((ex, idx) => ({
         ...ex,
         orderInWorkout: idx + 1,
-        // Backend DTO requires WorkoutId but Controller overrides it.
-        // We send 0 to satisfy [Required] validation if needed.
-        workoutId: 0,
-      })) as any,
+        workoutId: this.workoutId ?? 0,
+      })),
     };
 
-    this.api.post('workout', payload).subscribe({
+    this.api.put(`workout/${this.workoutId}`, payload).subscribe({
       next: async () => {
-        await this.showToast('Workout saved successfully!', 'success');
-        this.navCtrl.navigateBack('/home'); // Go back to dashboard
+        await this.showToast('Workout updated successfully!', 'success');
+        // Note: The DETAILS page must use ionViewWillEnter to see this update
+        this.navCtrl.navigateBack(`/workouts/${this.workoutId}`);
       },
       error: (err) => {
         console.error(err);
-        this.showToast('Failed to save workout.', 'danger');
+        this.showToast('Failed to update workout.', 'danger');
       },
     });
   }

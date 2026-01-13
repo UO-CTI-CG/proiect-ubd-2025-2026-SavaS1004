@@ -95,6 +95,63 @@ namespace GameTemetry.Controllers
             return CreatedAtAction(nameof(GetWorkout), new { id = workout.Id }, Mappers.MapWorkoutToDto(included));
         }
 
+        // PUT: api/workouts/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateWorkout(int id, CreateWorkoutDto dto)
+        {
+            // 1. Fetch existing workout with exercises
+            var workout = await _context.Workouts
+                .Include(w => w.WorkoutExercises)
+                .FirstOrDefaultAsync(w => w.Id == id);
+
+            if (workout == null) return NotFound("Workout not found.");
+
+            // 2. Validate User
+            if (workout.UserId != dto.UserId) return Forbid();
+
+            // 3. Update Scalar Properties
+            workout.WorkoutDate = dto.WorkoutDate;
+            workout.DurationMinutes = dto.DurationMinutes;
+            workout.Notes = dto.Notes;
+
+            // 4. Update Exercises (Strategy: Remove all existing, add new from DTO)
+            _context.WorkoutExercises.RemoveRange(workout.WorkoutExercises);
+
+            if (dto.Exercises != null)
+            {
+                foreach (var exDto in dto.Exercises)
+                {
+                    var workoutExercise = new WorkoutExercise
+                    {
+                        WorkoutId = id,
+                        ExerciseId = exDto.ExerciseId,
+                        Reps = exDto.Reps,
+                        Sets = exDto.Sets,
+                        Weight = exDto.Weight,
+                        RIR = exDto.RIR,
+                        RPE = exDto.RPE,
+                        DurationSeconds = exDto.DurationSeconds,
+                        Notes = exDto.Notes,
+                        OrderInWorkout = exDto.OrderInWorkout
+                    };
+                    _context.WorkoutExercises.Add(workoutExercise);
+                }
+            }
+
+            // 5. Save Changes
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_context.Workouts.Any(w => w.Id == id)) return NotFound();
+                throw;
+            }
+
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteWorkout(int id)
         {
@@ -104,6 +161,7 @@ namespace GameTemetry.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
         //CSV import/Export
         [HttpGet("export")]
         public async Task<IActionResult> ExportWorkouts()
@@ -125,7 +183,7 @@ namespace GameTemetry.Controllers
                 w.WorkoutDate,
                 w.DurationMinutes,
                 w.Notes
-                // Add more fields as needed
+                
             });
 
             await csvWriter.WriteRecordsAsync(exportDtos);

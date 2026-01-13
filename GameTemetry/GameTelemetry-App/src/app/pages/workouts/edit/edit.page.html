@@ -1,13 +1,15 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
+      <ion-back-button defaultHref="/workouts"></ion-back-button>
+
     </ion-buttons>
-    <ion-title>Log Workout</ion-title>
+    <ion-title>Edit Workout</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="saveWorkout()" [disabled]="addedExercises.length === 0">
-        Save
+      <ion-button (click)="updateWorkout()" [disabled]="addedExercises.length === 0">
+        Update
       </ion-button>
+
       <ion-button (click)="goToHome()">
         <ion-icon name="home-outline"></ion-icon>
       </ion-button>
@@ -98,9 +100,4 @@
       </div>
     </ion-accordion>
   </ion-accordion-group>
-
-  <div *ngIf="addedExercises.length === 0" class="ion-text-center ion-padding">
-    <ion-text color="medium">Select an exercise above to begin.</ion-text>
-  </div>
-
 </ion-content>
