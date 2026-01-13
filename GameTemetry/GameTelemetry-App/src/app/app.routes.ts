@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { guestGuard } from './core/guards/guest.guard';
-import { authGuard } from './core/guards/auth.gurd';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -10,7 +10,7 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    //canActivate: [guestGuard],
+    canActivate: [guestGuard],
     loadComponent: () =>
       import('./pages/auth/login/login.page').then((m) => m.LoginPage),
   },
@@ -26,12 +26,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/home/home.page').then((m) => m.HomePage),
   },
-  //{
-  //  path: 'workouts',
-  //  loadComponent: () => import('./pages/workouts/list/list.page').then(m => m.ListPage)
-  //},
-  //{
-  //  path: 'workouts/:id',
-  //  loadComponent: () => import('./pages/workouts/detail/detail.page').then(m => m.DetailPage)
-  //}
+  {
+    path: 'exercises',
+    loadComponent: () =>
+      import('./pages/exercises/exercises.page').then((m) => m.ExercisesPage),
+  },
+  {
+    path: 'workouts',
+    loadComponent: () =>
+      import('./pages/workouts/list/list.page').then((m) => m.ListPage),
+  },
+  {
+    path: 'workouts/create',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/workouts/create/create.page').then(
+        (m) => m.CreateWorkoutPage
+      ),
+  },
+  {
+    path: 'workouts/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/workouts/detail/detail.page').then((m) => m.DetailPage),
+  },
 ];

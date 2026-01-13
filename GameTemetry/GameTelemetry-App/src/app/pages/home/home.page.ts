@@ -81,7 +81,7 @@ export class HomePage implements OnInit {
     await loading.present();
 
     //Endpoint
-    this.api.get<Workout[]>('workouts').subscribe({
+    this.api.get<Workout[]>('workout').subscribe({
       next: (allWorkouts: Workout[]) => {
         const myWorkouts = (allWorkouts ?? []).filter(
           (w) => w.userId === this.userId

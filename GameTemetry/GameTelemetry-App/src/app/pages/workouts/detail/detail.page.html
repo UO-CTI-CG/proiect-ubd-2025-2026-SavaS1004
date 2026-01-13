@@ -1,0 +1,60 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Workout Details</ion-title>
+    <ion-buttons slot="end">
+      <ion-button color="danger" (click)="confirmDelete()" [disabled]="isLoading">
+        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <div *ngIf="!isLoading && workout">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-subtitle>{{ workout.workoutDate | date:'fullDate' }}</ion-card-subtitle>
+        <ion-card-title>{{ workout.durationMinutes }} Minutes</ion-card-title>
+      </ion-card-header>
+      <ion-card-content *ngIf="workout.notes">
+        <p>"{{ workout.notes }}"</p>
+      </ion-card-content>
+    </ion-card>
+
+    <h3 class="ion-margin-top">Exercises</h3>
+
+    <ion-list>
+      <ion-item *ngFor="let ex of workout.exercises">
+        <ion-label>
+          <h2>{{ ex.exerciseName || ('Exercise #' + ex.exerciseId) }}</h2>
+          <div class="ion-margin-top">
+            <span class="set-tag">Sets: {{ ex.sets }}</span>
+            <span class="set-tag">Reps: {{ ex.reps }}</span>
+            <span class="set-tag" *ngIf="ex.weight > 0">{{ ex.weight }}kg</span>
+            <span class="set-tag">RPE: {{ ex.rpe }}</span>
+          </div>
+          <p *ngIf="ex.notes" class="ion-margin-top io-text-wrap">
+            <small>Note: {{ ex.notes }}</small>
+          </p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <div *ngIf="isLoading">
+    <ion-skeleton-text animated style="width: 100%; height: 150px; margin-bottom: 20px;"></ion-skeleton-text>
+    <ion-list>
+      <ion-item *ngFor="let i of [1,2,3]">
+        <ion-label>
+          <ion-skeleton-text animated style="width: 60%"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 40%"></ion-skeleton-text>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+  </div>
+
+</ion-content>

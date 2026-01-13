@@ -1,0 +1,99 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Log Workout</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveWorkout()" [disabled]="addedExercises.length === 0">
+        Save
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <ion-list lines="full">
+    <ion-list-header>
+      <ion-label>Session Details</ion-label>
+    </ion-list-header>
+
+    <ion-item>
+      <ion-label position="stacked">Date</ion-label>
+      <ion-input type="datetime-local" [(ngModel)]="workoutDate"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Duration (min)</ion-label>
+      <ion-input type="number" [(ngModel)]="durationMinutes"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Notes</ion-label>
+      <ion-textarea [(ngModel)]="notes" placeholder="How did it feel?"></ion-textarea>
+    </ion-item>
+  </ion-list>
+
+  <div class="add-section ion-margin-top">
+    <h3>Exercises</h3>
+    <ion-item lines="none" class="exercise-selector">
+      <ion-select label="Add Exercise" placeholder="Select..." [(ngModel)]="selectedExerciseId"
+        (ionChange)="addExercise()">
+        <ion-select-option *ngFor="let ex of availableExercises" [value]="ex.id">
+          {{ ex.name }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+  </div>
+
+  <ion-accordion-group [multiple]="true" [value]="[]">
+    <ion-accordion *ngFor="let entry of addedExercises; let i = index" [value]="'item-'+i">
+      <ion-item slot="header" color="light">
+        <ion-label>
+          <h2>{{ i + 1 }}. {{ getExerciseName(entry.exerciseId) }}</h2>
+          <p>{{ entry.sets }} sets × {{ entry.reps }} reps @ {{ entry.weight }}kg</p>
+        </ion-label>
+        <ion-button slot="end" fill="clear" color="danger" (click)="removeExercise(i); $event.stopPropagation()">
+          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <div class="ion-padding" slot="content">
+        <ion-grid>
+          <ion-row>
+            <ion-col size="6">
+              <ion-item>
+                <ion-label position="stacked">Sets</ion-label>
+                <ion-input type="number" [(ngModel)]="entry.sets"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6">
+              <ion-item>
+                <ion-label position="stacked">Reps</ion-label>
+                <ion-input type="number" [(ngModel)]="entry.reps"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6">
+              <ion-item>
+                <ion-label position="stacked">Weight (kg)</ion-label>
+                <ion-input type="number" [(ngModel)]="entry.weight"></ion-input>
+              </ion-item>
+            </ion-col>
+            <ion-col size="6">
+              <ion-item>
+                <ion-label position="stacked">RPE (1-10)</ion-label>
+                <ion-input type="number" [(ngModel)]="entry.rpe"></ion-input>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </div>
+    </ion-accordion>
+  </ion-accordion-group>
+
+  <div *ngIf="addedExercises.length === 0" class="ion-text-center ion-padding">
+    <ion-text color="medium">Select an exercise above to begin.</ion-text>
+  </div>
+
+</ion-content>
