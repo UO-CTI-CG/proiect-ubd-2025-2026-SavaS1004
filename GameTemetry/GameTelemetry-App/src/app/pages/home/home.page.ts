@@ -7,11 +7,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { ApiService } from '../../core/services/api.service';
-import {
-  logOutOutline,
-  homeOutline,
-  personCircleOutline,
-} from 'ionicons/icons';
+import { logOutOutline, personCircleOutline } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 
 export interface Workout {
@@ -55,7 +51,7 @@ export class HomePage implements OnInit {
     private loadingCtrl: LoadingController,
     private toastCtrl: ToastController
   ) {
-    addIcons({ logOutOutline });
+    addIcons({ logOutOutline, personCircleOutline });
   }
 
   ngOnInit(): void {
@@ -179,5 +175,8 @@ export class HomePage implements OnInit {
       position: 'bottom',
     });
     await t.present();
+  }
+  goToProfile() {
+    this.router.navigate(['/profile']);
   }
 }

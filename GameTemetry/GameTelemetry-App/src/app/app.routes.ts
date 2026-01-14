@@ -31,12 +31,6 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/exercises/exercises.page').then((m) => m.ExercisesPage),
   },
-  //IDK what this is really for
-  // {
-  //   path: 'workouts',
-  //   loadComponent: () =>
-  //     import('./pages/workouts/list/list.page').then((m) => m.ListPage),
-  // },
   {
     path: 'workouts/create',
     canActivate: [authGuard],
@@ -56,5 +50,15 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/workouts/detail/detail.page').then((m) => m.DetailPage),
+  },
+  {
+    path: 'analytics',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/analytics/analytics.page').then((m) => m.AnalyticsPage),
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./pages/profile/profile.page').then( m => m.ProfilePage)
   },
 ];

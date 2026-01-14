@@ -25,4 +25,15 @@ export class ApiService {
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}/${endpoint}`);
   }
+  //Method to handle file downloads (Export)
+  download(endpoint: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${endpoint}`, {
+      responseType: 'blob',
+    });
+  }
+
+  //Method to handle file uploads (Import)
+  upload(endpoint: string, formData: FormData): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${endpoint}`, formData);
+  }
 }

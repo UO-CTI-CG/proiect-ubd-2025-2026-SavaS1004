@@ -84,6 +84,11 @@ namespace GameTemetry.Controllers
                     };
                     _context.WorkoutExercises.Add(workoutExercise);
                 }
+                
+            foreach (var exDto in dto.Exercises)
+            {
+                await UpdatePerformanceMetrics(dto.UserId, exDto.ExerciseId);
+            }
                 await _context.SaveChangesAsync();
             }
 
@@ -135,6 +140,10 @@ namespace GameTemetry.Controllers
                         OrderInWorkout = exDto.OrderInWorkout
                     };
                     _context.WorkoutExercises.Add(workoutExercise);
+                }
+                foreach (var exDto in dto.Exercises)
+                {
+                    await UpdatePerformanceMetrics(dto.UserId, exDto.ExerciseId);
                 }
             }
 
@@ -314,6 +323,50 @@ namespace GameTemetry.Controllers
             await _context.SaveChangesAsync();
 
             return Ok($"{importDtos.Count} workouts imported successfully.");
+        }
+        // Inside WorkoutController.cs
+
+        private async Task UpdatePerformanceMetrics(int userId, int exerciseId)
+        {
+            // 1. Fetch all history for this user & exercise
+            var history = await _context.WorkoutExercises
+                .Include(we => we.Workout)
+                .Where(we => we.Workout.UserId == userId && we.ExerciseId == exerciseId)
+                .ToListAsync();
+
+            if (!history.Any()) return; // Should likely handle delete case too, but for now this is fine
+
+            // 2. Calculate Aggregates
+            var maxWeight = history.Max(h => h.Weight);
+            var totalVolume = history.Sum(h => h.Weight * h.Reps * h.Sets); // Simple volume calc
+            var avgReps = (decimal)history.Average(h => h.Reps);
+            var avgRIR = (decimal)history.Average(h => h.RIR);
+            var workoutCount = history.Select(h => h.WorkoutId).Distinct().Count();
+            var lastPerformed = history.Max(h => h.Workout.WorkoutDate);
+
+            // 3. Find existing metric record or create new
+            var metric = await _context.PerformanceMetrics
+                .FirstOrDefaultAsync(m => m.UserId == userId && m.ExerciseId == exerciseId);
+
+            if (metric == null)
+            {
+                metric = new PerformanceMetric
+                {
+                    UserId = userId,
+                    ExerciseId = exerciseId
+                };
+                _context.PerformanceMetrics.Add(metric);
+            }
+
+            // 4. Update fields
+            metric.MaxWeight = (decimal)maxWeight;
+            metric.TotalVolume = (decimal)totalVolume;
+            metric.AverageReps = avgReps;
+            metric.AverageRIR = avgRIR;
+            metric.WorkoutsCount = workoutCount;
+            metric.LastPerformed = lastPerformed;
+
+            await _context.SaveChangesAsync();
         }
     }
 }
