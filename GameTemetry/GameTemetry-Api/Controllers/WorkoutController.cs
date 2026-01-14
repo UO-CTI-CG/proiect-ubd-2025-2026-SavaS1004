@@ -244,7 +244,7 @@ namespace GameTemetry.Controllers
             await _context.SaveChangesAsync();
             return Ok($"{records.Count} workouts imported successfully.");
         }
-        //Import/Export
+        //Import/Export JSON
         [HttpGet("export-json-workouts")]
         public async Task<IActionResult> ExportWorkoutsJson()
         {
@@ -280,8 +280,7 @@ namespace GameTemetry.Controllers
         [HttpPost("import-json")]
         public async Task<IActionResult> ImportWorkoutsJson(IFormFile file)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("JSON file is required.");
+            if (file == null || file.Length == 0) return BadRequest("JSON file is required.");
 
             using var stream = file.OpenReadStream();
             using var ms = new MemoryStream();
@@ -289,42 +288,47 @@ namespace GameTemetry.Controllers
             var jsonBytes = ms.ToArray();
 
             var fileService = HttpContext.RequestServices.GetRequiredService<IFileImportExportService>();
+
+            // The service now handles fixing IDs and removing duplicates
             var importDtos = await fileService.ImportWorkoutsFromJsonAsync(jsonBytes);
 
             foreach (var dto in importDtos)
             {
                 var workout = new Workout
                 {
-                    UserId = dto.UserId,
+                    UserId = dto.UserId, // Ensure you map the user ID correctly (or overwrite with current user)
                     WorkoutDate = dto.WorkoutDate,
                     DurationMinutes = dto.DurationMinutes,
                     Notes = dto.Notes
                 };
                 _context.Workouts.Add(workout);
-                await _context.SaveChangesAsync(); // Save to get WorkoutId
+                await _context.SaveChangesAsync(); // Saves the Workout (Header)
 
-                foreach (var exDto in dto.Exercises)
+                if (dto.Exercises != null)
                 {
-                    var workoutExercise = new WorkoutExercise
+                    foreach (var exDto in dto.Exercises)
                     {
-                        WorkoutId = workout.Id,
-                        ExerciseId = exDto.ExerciseId,
-                        Reps = exDto.Reps,
-                        Sets = exDto.Sets,
-                        Weight = exDto.Weight,
-                        RIR = exDto.RIR,
-                        RPE = exDto.RPE,
-                        DurationSeconds = exDto.DurationSeconds,
-                        Notes = exDto.Notes
-                    };
-                    _context.WorkoutExercises.Add(workoutExercise);
+                        var workoutExercise = new WorkoutExercise
+                        {
+                            WorkoutId = workout.Id,
+                            ExerciseId = exDto.ExerciseId, // This ID is now guaranteed valid
+                            Reps = exDto.Reps,
+                            Sets = exDto.Sets,
+                            Weight = exDto.Weight,
+                            RIR = exDto.RIR,
+                            RPE = exDto.RPE,
+                            DurationSeconds = exDto.DurationSeconds,
+                            Notes = exDto.Notes
+                        };
+                        _context.WorkoutExercises.Add(workoutExercise);
+                    }
                 }
             }
-            await _context.SaveChangesAsync();
+
+            await _context.SaveChangesAsync(); // Saves the Exercises (Lines)
 
             return Ok($"{importDtos.Count} workouts imported successfully.");
         }
-        // Inside WorkoutController.cs
 
         private async Task UpdatePerformanceMetrics(int userId, int exerciseId)
         {

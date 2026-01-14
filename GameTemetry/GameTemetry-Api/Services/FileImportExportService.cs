@@ -1,6 +1,6 @@
 ﻿using GameTemetry.Data;
-using GameTemetry.DTOs;
 using GameTemetry.DTOs.WorkoutImport;
+using GameTemetry.DTOs;
 using GameTemetry.Interfaces;
 using GameTemetry.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +13,7 @@ namespace GameTemetry.Services
     {
         private readonly AppDbContext _context;
         public FileImportExportService(AppDbContext context) => _context = context;
+
         public Task<byte[]> ExportWorkoutsToJsonAsync(List<Workout> workouts)
         {
             var exportDtos = workouts.Select(MapWorkoutToExportDto).ToList();
@@ -26,7 +27,9 @@ namespace GameTemetry.Services
         public Task<byte[]> ExportWorkoutToJsonAsync(Workout workout)
         {
             var exportDto = MapWorkoutToExportDto(workout);
-            var json = JsonSerializer.Serialize(exportDto, new JsonSerializerOptions
+            // Wrap single object in a list for consistent importing later
+            var list = new List<WorkoutExportDto> { exportDto };
+            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions
             {
                 WriteIndented = true,
             });
@@ -36,32 +39,66 @@ namespace GameTemetry.Services
         public async Task<List<WorkoutImportDto>> ImportWorkoutsFromJsonAsync(byte[] jsonData)
         {
             var json = Encoding.UTF8.GetString(jsonData);
-            var importedDtos= JsonSerializer.Deserialize<List<WorkoutImportDto>>(json) ?? new();
-            // Validate referenced Exercises exist
-            var exerciseIds = importedDtos
-                .SelectMany(w => w.Exercises)
-                .Select(e => e.ExerciseId)
-                .Distinct()
-                .ToList();
 
-            var existingExercises = await _context.Exercises
-                .Where(e => exerciseIds.Contains(e.Id))
-                .Select(e => e.Id)
-                .ToListAsync();
+            // FIX 1: Add PropertyNameCaseInsensitive to handle "exerciseId" vs "ExerciseId"
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var importedDtos = JsonSerializer.Deserialize<List<WorkoutImportDto>>(json, options) ?? new();
 
-            foreach (var workout in importedDtos)
+            var existingExercises = await _context.Exercises.ToListAsync();
+
+            foreach (var workoutDto in importedDtos)
             {
-                foreach (var exercise in workout.Exercises)
+                // FIX 2: Create a new list to store corrected exercises and remove duplicates
+                var distinctExercises = new List<WorkoutExerciseResponseDto>();
+                var processedIds = new HashSet<int>();
+
+                foreach (var exDto in workoutDto.Exercises)
                 {
-                    if (!existingExercises.Contains(exercise.ExerciseId))
-                        throw new InvalidOperationException($"ExerciseId {exercise.ExerciseId} does not exist.");
+                    // Logic to find match by ID or Name
+                    var match = existingExercises.FirstOrDefault(e => e.Id == exDto.ExerciseId);
+
+                    if (match == null && !string.IsNullOrEmpty(exDto.ExerciseName))
+                    {
+                        match = existingExercises.FirstOrDefault(e =>
+                            e.Name.Equals(exDto.ExerciseName, StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    if (match != null)
+                    {
+                        exDto.ExerciseId = match.Id;
+                    }
+                    else
+                    {
+                        // Create new if not found
+                        var newExercise = new Exercise
+                        {
+                            Name = !string.IsNullOrEmpty(exDto.ExerciseName)
+                                ? exDto.ExerciseName
+                                : $"Imported Exercise {exDto.ExerciseId}",
+                            Description = "Automatically created during import",
+                            Category = "Imported"
+                        };
+
+                        _context.Exercises.Add(newExercise);
+                        await _context.SaveChangesAsync();
+                        existingExercises.Add(newExercise);
+                        exDto.ExerciseId = newExercise.Id;
+                    }
+
+                    // FIX 3: Prevent duplicates (e.g., if two imported items map to the same local ExerciseId)
+                    if (!processedIds.Contains(exDto.ExerciseId))
+                    {
+                        distinctExercises.Add(exDto);
+                        processedIds.Add(exDto.ExerciseId);
+                    }
                 }
+
+                // Replace the original list with the clean, valid list
+                workoutDto.Exercises = distinctExercises;
             }
 
             return importedDtos;
         }
-
-        
 
         private WorkoutExportDto MapWorkoutToExportDto(Workout workout)
         {
@@ -77,7 +114,7 @@ namespace GameTemetry.Services
                 {
                     Id = we.Id,
                     ExerciseId = we.ExerciseId,
-                    ExerciseName = we.Exercise?.Name ?? "",
+                    ExerciseName = we.Exercise?.Name ?? "Unknown Exercise",
                     Reps = we.Reps,
                     Sets = we.Sets,
                     Weight = we.Weight,

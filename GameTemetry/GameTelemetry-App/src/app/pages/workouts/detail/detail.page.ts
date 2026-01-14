@@ -15,6 +15,7 @@ import {
   documentTextOutline,
   downloadOutline,
   cloudUploadOutline,
+  codeDownloadOutline, // Ensure this is imported
 } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { ApiService } from '../../../core/services/api.service';
@@ -54,6 +55,7 @@ export class DetailPage implements OnInit, ViewWillEnter {
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController
   ) {
+    // Register all icons used in the HTML
     addIcons({
       trashOutline,
       homeOutline,
@@ -61,6 +63,7 @@ export class DetailPage implements OnInit, ViewWillEnter {
       documentTextOutline,
       downloadOutline,
       cloudUploadOutline,
+      codeDownloadOutline,
     });
   }
 
@@ -103,104 +106,123 @@ export class DetailPage implements OnInit, ViewWillEnter {
     });
   }
 
-  // --- CSV / JSON EXPORT & IMPORT LOGIC
+  // --- EXPORT LOGIC ---
 
-  // 1. Export THIS specific workout as JSON
+  // 1. Export This (JSON)
   async exportThisWorkoutJson() {
     if (!this.workout) return;
-
-    const loading = await this.loadingCtrl.create({
-      message: 'Exporting JSON...',
-    });
-    await loading.present();
-
-    this.api
-      .download(`Workout/export-json-workout/${this.workout.id}`)
-      .subscribe({
-        next: (blob) => {
-          this.downloadFile(blob, `workout-${this.workout.id}.json`);
-          loading.dismiss();
-          this.showToast('Workout exported as JSON');
-        },
-        error: () => {
-          loading.dismiss();
-          this.showToast('Export failed', 'danger');
-        },
-      });
+    this.handleDownload(
+      `Workout/export-json-workout/${this.workout.id}`,
+      `workout-${this.workout.id}.json`,
+      'JSON Export'
+    );
   }
 
-  // 2. Export ALL workouts as CSV
+  // 2. Export All (CSV)
   async exportAllCsv() {
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.handleDownload(
+      'Workout/export',
+      `all_workouts_${dateStr}.csv`,
+      'CSV Export'
+    );
+  }
+
+  // 3. Export All (JSON) - THIS WAS MISSING
+  async exportAllJson() {
+    const dateStr = new Date().toISOString().split('T')[0];
+    this.handleDownload(
+      'Workout/export-json-workouts',
+      `all_workouts_${dateStr}.json`,
+      'JSON Export'
+    );
+  }
+
+  // Shared Download Helper
+  private async handleDownload(
+    endpoint: string,
+    filename: string,
+    label: string
+  ) {
     const loading = await this.loadingCtrl.create({
-      message: 'Exporting CSV...',
+      message: `Preparing ${label}...`,
     });
     await loading.present();
 
-    this.api.download('Workout/export').subscribe({
+    this.api.download(endpoint).subscribe({
       next: (blob) => {
-        const dateStr = new Date().toISOString().split('T')[0];
-        this.downloadFile(blob, `all_workouts_${dateStr}.csv`);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
         loading.dismiss();
-        this.showToast('All workouts exported as CSV');
+        this.showToast(`${label} successful!`);
       },
       error: () => {
         loading.dismiss();
-        this.showToast('Export failed', 'danger');
+        this.showToast(`${label} failed.`, 'danger');
       },
     });
   }
 
-  // 3. Import CSV
+  // --- IMPORT LOGIC (Dynamic) ---
+
   triggerFileInput() {
-    document.getElementById('csvFileInput')?.click();
+    document.getElementById('fileInput')?.click();
   }
 
   async onFileSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
 
-    const loading = await this.loadingCtrl.create({ message: 'Importing...' });
+    // 1. Detect Extension
+    const fileName = file.name.toLowerCase();
+    let endpoint = '';
+
+    if (fileName.endsWith('.csv')) {
+      endpoint = 'Workout/import';
+    } else if (fileName.endsWith('.json')) {
+      endpoint = 'Workout/import-json';
+    } else {
+      this.showToast(
+        'Invalid file type. Please select .csv or .json',
+        'warning'
+      );
+      return;
+    }
+
+    // 2. Upload
+    const loading = await this.loadingCtrl.create({
+      message: 'Importing Data...',
+    });
     await loading.present();
 
     const formData = new FormData();
     formData.append('file', file);
 
-    this.api.upload('Workout/import', formData).subscribe({
+    this.api.upload(endpoint, formData).subscribe({
       next: (res) => {
         loading.dismiss();
-        this.showToast('Workouts imported successfully!');
-        // Clear input so same file can be selected again if needed
-        event.target.value = '';
+        this.showToast('Import successful!');
+        event.target.value = ''; // Reset input
+
+        // Refresh the page data if we are currently viewing a workout that might have changed
+        // Or simply navigate home to see the new list
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         loading.dismiss();
-        this.showToast('Import failed. Check CSV format.', 'danger');
+        console.error(err);
+        this.showToast('Import failed. Check file format.', 'danger');
       },
     });
   }
 
-  // Helper to trigger browser download
-  private downloadFile(blob: Blob, fileName: string) {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }
-
-  async showToast(msg: string, color: string = 'medium') {
-    const toast = await this.toastCtrl.create({
-      message: msg,
-      duration: 2000,
-      color: color,
-    });
-    await toast.present();
-  }
-
-  // --- END IMPORT/EXPORT ---
+  // --- ACTIONS ---
 
   async confirmDelete() {
     const alert = await this.alertCtrl.create({
@@ -229,6 +251,15 @@ export class DetailPage implements OnInit, ViewWillEnter {
         this.showToast('Delete failed', 'danger');
       },
     });
+  }
+
+  async showToast(msg: string, color: string = 'medium') {
+    const toast = await this.toastCtrl.create({
+      message: msg,
+      duration: 2000,
+      color: color,
+    });
+    await toast.present();
   }
 
   goToHome() {
