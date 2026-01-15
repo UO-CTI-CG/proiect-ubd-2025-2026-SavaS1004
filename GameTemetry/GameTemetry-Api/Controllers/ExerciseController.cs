@@ -13,7 +13,7 @@ namespace GameTemetry.Controllers
         private readonly AppDbContext _context;
         public ExerciseController(AppDbContext context) => _context = context;
 
-        // GET: api/Exercises
+        // GET: api/exercise
         [HttpGet]
         public async Task<ActionResult<List<ExerciseResponseDto>>> GetExercises()
         {
